@@ -53,7 +53,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/work-clock-canvas.git
+git clone https://github.com/7HR4IZ3/time-tracker
 
 # Navigate to project directory
 cd work-clock-canvas
@@ -173,7 +173,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 - 📧 Email: support@example.com
 - 🌐 Website: [timetracker.example.com](https://timetracker.example.com)
-- 🐛 [Issue Tracker](https://github.com/yourusername/work-clock-canvas/issues)
+- 🐛 [Issue Tracker](https://github.com/7HR4IZ3/time-tracker/issues)
 
 ---
 
