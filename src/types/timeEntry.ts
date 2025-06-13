@@ -1,14 +1,25 @@
-
 export interface TimeEntry {
-  id: string;
+  id: string; // We'll generate this
   project: string;
   client: string;
   description: string;
-  timeHours: string;
-  timeDecimal: number;
-  amount: number;
-  date?: Date;
-  category?: string;
+  task: string;
+  user: string;
+  group: string;
+  email: string;
+  tags: string;
+  billable: boolean;
+  startDate: Date;
+  startTime: string;
+  endDate: Date;
+  endTime: string;
+  timeHours: string; // Duration (h)
+  timeDecimal: number; // Duration (decimal)
+  billableRate: number;
+  billableAmount: number;
+  // Computed fields
+  amount: number; // This will be calculated based on our hourly rate
+  date: Date; // We'll use startDate for this
 }
 
 export interface TimeRoundingOptions {

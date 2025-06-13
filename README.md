@@ -1,73 +1,182 @@
-# Welcome to your Lovable project
+# ⏱️ TimeTracker Analytics
 
-## Project info
+> Transform your timesheet data into actionable insights with powerful analytics and beautiful visualizations.
 
-**URL**: https://lovable.dev/projects/a4672e6e-bc3b-401c-9d3e-8cc56adf8a0e
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 
-## How can I edit this code?
+![Demo Screenshot](public/assets/screenshot.png)
 
-There are several ways of editing your application.
+## 🌟 Features
 
-**Use Lovable**
+### 📥 Data Import
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a4672e6e-bc3b-401c-9d3e-8cc56adf8a0e) and start prompting.
+- 📁 Drag & drop CSV file upload
+- 🌐 Remote CSV URL loading
+- ✨ Automatic data validation
+- ⚙️ Configurable settings
+  - 💰 Custom hourly rates
+  - ⏰ Time rounding intervals
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📊 Analysis & Visualization
 
-**Use your preferred IDE**
+- 📈 Interactive time charts
+- 📋 Detailed data tables
+- 💼 Project breakdowns
+- 👥 Client distributions
+- 💰 Billable vs non-billable analysis
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🔍 Advanced Filtering
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- 📅 Date range selection
+- 🏷️ Project/client filtering
+- 🔎 Full-text search
+- ⚡ Real-time calculations
 
-Follow these steps:
+### 💫 Special Features
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- ⏰ Time rounding (15/30/60 min)
+- 📎 Shareable analysis links
+- 📄 Invoice generation
+- 💾 Data export options
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🚀 Quick Start
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Prerequisites
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+- Node.js 16+ 📦
+- npm/yarn 🔧
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/work-clock-canvas.git
+
+# Navigate to project directory
+cd work-clock-canvas
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🎮 Usage
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 🔗 URL Parameters
 
-**Use GitHub Codespaces**
+Customize your analysis with URL parameters:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+your-app.com/?url=https://example.com/data.csv  # Load CSV
+              &rate=100                          # Hourly rate
+              &interval=30                       # Rounding
+              &search=ProjectName                # Search
+              &projects=Project1,Project2        # Filter
+              &startDate=2024-01-01             # Date range
+```
 
-## What technologies are used for this project?
+### 📝 CSV Format
 
-This project is built with:
+#### Required Columns
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Category   | Columns                        |
+| ---------- | ------------------------------ |
+| Basic Info | Project, Client, Description   |
+| Time Data  | Start Date, End Date, Duration |
 
-## How can I deploy this project?
+<details>
+<summary>View all supported columns</summary>
 
-Simply open [Lovable](https://lovable.dev/projects/a4672e6e-bc3b-401c-9d3e-8cc56adf8a0e) and click on Share -> Publish.
+```plaintext
+Required:
+- Project
+- Client
+- Description
+- Start Date (YYYY-MM-DD)
+- Start Time (HH:mm:ss)
+- End Date
+- End Time
+- Duration (h)
+- Duration (decimal)
 
-## Can I connect a custom domain to my Lovable project?
+Optional:
+- Task
+- Tags
+- Group
+- User
+- Email
+- Billable Rate (USD)
+- Billable Amount (USD)
+```
 
-Yes, you can!
+</details>
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🛠️ Tech Stack
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Core
+
+- ⚛️ React 18
+- 📘 TypeScript
+- ⚡ Vite
+- 🎨 Tailwind CSS
+
+### UI Components
+
+- 🎯 shadcn/ui
+- 📅 React Day Picker
+- 🎭 Lucide Icons
+
+### Data Processing
+
+- 📊 date-fns
+- 📑 PapaParse
+
+## 📂 Project Structure
+
+```
+src/
+├── 📱 components/     # React components
+│   ├── 🎨 ui/        # shadcn/ui components
+│   └── ...
+├── 📝 types/         # TypeScript types
+├── 🛠️ utils/         # Utility functions
+├── 🎣 hooks/         # Custom React hooks
+└── 📄 pages/         # Page components
+```
+
+## 🤝 Contributing
+
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
+
+1. Fork the repo
+2. Create a feature branch
+3. Commit changes
+4. Push to branch
+5. Open a Pull Request
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) for details
+
+## 🙏 Acknowledgments
+
+- [shadcn/ui](https://ui.shadcn.com/) for beautiful components
+- [Lucide](https://lucide.dev/) for icons
+- [Tailwind CSS](https://tailwindcss.com/) for styling
+
+## 📞 Support
+
+- 📧 Email: support@example.com
+- 🌐 Website: [timetracker.example.com](https://timetracker.example.com)
+- 🐛 [Issue Tracker](https://github.com/yourusername/work-clock-canvas/issues)
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/yourusername">Your Name</a>
+</p>

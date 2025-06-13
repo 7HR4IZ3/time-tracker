@@ -1,17 +1,35 @@
-
-import { useState } from 'react';
-import { Upload } from 'lucide-react';
-import FileUpload from '@/components/FileUpload';
-import Dashboard from '@/components/Dashboard';
-import { TimeEntry } from '@/types/timeEntry';
+import { useState, useEffect } from "react";
+import { Upload } from "lucide-react";
+import FileUpload from "@/components/FileUpload";
+import Dashboard from "@/components/Dashboard";
+import { FilterOptions, TimeEntry } from "@/types/timeEntry";
+import { parseFilterParams } from "@/utils/urlParams";
 
 const Index = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [hasData, setHasData] = useState(false);
+  const [initialUrl, setInitialUrl] = useState<string | null>(null);
+  const [defaultRate, setDefaultRate] = useState<number>(25);
+  const [defaultInterval, setDefaultInterval] = useState<15 | 30 | 60>(60);
+  const [initialFilters, setInitialFilters] = useState<FilterOptions>({});
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("url");
+    const rate = params.get("rate");
+    const interval = params.get("interval");
+    const filters = parseFilterParams(params);
+
+    if (url) setInitialUrl(url);
+    if (rate) setDefaultRate(Number(rate));
+    if (interval) setDefaultInterval(Number(interval) as 15 | 30 | 60);
+    setInitialFilters(filters);
+  }, []);
 
   const handleDataImport = (data: TimeEntry[]) => {
     setTimeEntries(data);
     setHasData(true);
+    setInitialUrl(null); // Clear the initial URL after successful import
   };
 
   return (
@@ -27,16 +45,25 @@ const Index = () => {
                 TimeTracker Analytics
               </h1>
               <p className="text-xl text-muted-foreground">
-                Upload your timesheet data to get started with powerful analytics and insights
+                Upload your timesheet data to get started with powerful
+                analytics and insights
               </p>
             </div>
-            <FileUpload onDataImport={handleDataImport} />
+            <FileUpload
+              onDataImport={handleDataImport}
+              initialUrl={initialUrl}
+              defaultHourlyRate={defaultRate}
+              defaultRoundingInterval={defaultInterval}
+            />
           </div>
         </div>
       ) : (
-        <Dashboard 
-          timeEntries={timeEntries} 
+        <Dashboard
+          timeEntries={timeEntries}
           onNewData={() => setHasData(false)}
+          defaultHourlyRate={defaultRate}
+          defaultRoundingInterval={defaultInterval}
+          initialFilters={initialFilters}
         />
       )}
     </div>
