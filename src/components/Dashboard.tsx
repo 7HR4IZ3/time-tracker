@@ -1,8 +1,12 @@
 
 import { useState, useMemo } from 'react';
-import { Upload, Filter, FileText, BarChart3, Table } from 'lucide-react';
+import { Upload, Filter, FileText, BarChart3, Table, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import DataFilters from './DataFilters';
 import TimeCharts from './TimeCharts';
 import DataTable from './DataTable';
@@ -19,6 +23,33 @@ interface DashboardProps {
 const Dashboard = ({ timeEntries, onNewData }: DashboardProps) => {
   const [filters, setFilters] = useState<FilterOptions>({});
   const [currentEntries, setCurrentEntries] = useState<TimeEntry[]>(timeEntries);
+  const [hourlyRate, setHourlyRate] = useState<number>(75);
+  const [roundingInterval, setRoundingInterval] = useState<15 | 30 | 60>(15);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const roundTime = (timeDecimal: number, interval: 15 | 30 | 60): number => {
+    const intervalInHours = interval / 60;
+    return Math.ceil(timeDecimal / intervalInHours) * intervalInHours;
+  };
+
+  const applyTimeRounding = () => {
+    const updatedEntries = currentEntries.map(entry => ({
+      ...entry,
+      timeDecimal: roundTime(entry.timeDecimal, roundingInterval),
+      amount: roundTime(entry.timeDecimal, roundingInterval) * hourlyRate
+    }));
+    
+    setCurrentEntries(updatedEntries);
+  };
+
+  const recalculateAmounts = () => {
+    const updatedEntries = currentEntries.map(entry => ({
+      ...entry,
+      amount: entry.timeDecimal * hourlyRate
+    }));
+    
+    setCurrentEntries(updatedEntries);
+  };
 
   const filteredEntries = useMemo(() => {
     return currentEntries.filter(entry => {
@@ -78,11 +109,63 @@ const Dashboard = ({ timeEntries, onNewData }: DashboardProps) => {
               {filteredEntries.length} entries • {totalHours.toFixed(2)} hours • ${totalAmount.toFixed(2)}
             </p>
           </div>
-          <Button onClick={onNewData} variant="outline">
-            <Upload className="w-4 h-4 mr-2" />
-            Upload New Data
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowSettings(!showSettings)} variant="outline">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+            <Button onClick={onNewData} variant="outline">
+              <Upload className="w-4 h-4 mr-2" />
+              Upload New Data
+            </Button>
+          </div>
         </div>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                  <Label htmlFor="hourlyRateInput">Hourly Rate ($)</Label>
+                  <Input
+                    id="hourlyRateInput"
+                    type="number"
+                    value={hourlyRate}
+                    onChange={(e) => setHourlyRate(Number(e.target.value))}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="roundingSelect">Time Rounding</Label>
+                  <Select 
+                    value={roundingInterval.toString()} 
+                    onValueChange={(value) => setRoundingInterval(Number(value) as 15 | 30 | 60)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button onClick={applyTimeRounding} variant="default">
+                  Apply Rounding
+                </Button>
+
+                <Button onClick={recalculateAmounts} variant="outline">
+                  Recalculate Amounts
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
