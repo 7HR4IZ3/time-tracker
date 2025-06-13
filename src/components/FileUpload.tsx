@@ -3,8 +3,11 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TimeEntry } from '@/types/timeEntry';
+import { TimeEntry, TimeRoundingOptions } from '@/types/timeEntry';
 
 interface FileUploadProps {
   onDataImport: (data: TimeEntry[]) => void;
@@ -15,12 +18,19 @@ const FileUpload = ({ onDataImport }: FileUploadProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [defaultHourlyRate, setDefaultHourlyRate] = useState<number>(75);
+  const [roundingInterval, setRoundingInterval] = useState<15 | 30 | 60>(15);
+
+  const roundTime = (timeDecimal: number, interval: 15 | 30 | 60): number => {
+    const intervalInHours = interval / 60;
+    return Math.ceil(timeDecimal / intervalInHours) * intervalInHours;
+  };
 
   const parseCSV = (csvText: string): TimeEntry[] => {
     const lines = csvText.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
     
-    const requiredColumns = ['project', 'client', 'description', 'time (h)', 'time (decimal)', 'amount (usd)'];
+    const requiredColumns = ['project', 'client', 'description', 'time (h)', 'time (decimal)'];
     const missingColumns = requiredColumns.filter(col => !headers.some(h => h.includes(col.split('(')[0].trim())));
     
     if (missingColumns.length > 0) {
@@ -34,14 +44,22 @@ const FileUpload = ({ onDataImport }: FileUploadProps) => {
       
       if (values.length < headers.length) continue;
       
+      const timeDecimal = parseFloat(values[headers.findIndex(h => h.includes('time (decimal)'))] || '0');
+      const roundedTime = roundTime(timeDecimal, roundingInterval);
+      
+      // Check if amount is provided, if not calculate using hourly rate
+      const amountIndex = headers.findIndex(h => h.includes('amount'));
+      const providedAmount = amountIndex >= 0 ? parseFloat(values[amountIndex] || '0') : 0;
+      const calculatedAmount = providedAmount > 0 ? providedAmount : roundedTime * defaultHourlyRate;
+      
       const entry: TimeEntry = {
         id: `entry-${i}`,
         project: values[headers.findIndex(h => h.includes('project'))] || '',
         client: values[headers.findIndex(h => h.includes('client'))] || '',
         description: values[headers.findIndex(h => h.includes('description'))] || '',
         timeHours: values[headers.findIndex(h => h.includes('time (h)'))] || '',
-        timeDecimal: parseFloat(values[headers.findIndex(h => h.includes('time (decimal)'))] || '0'),
-        amount: parseFloat(values[headers.findIndex(h => h.includes('amount'))] || '0'),
+        timeDecimal: roundedTime,
+        amount: calculatedAmount,
         date: new Date(),
         category: 'General'
       };
@@ -71,7 +89,7 @@ const FileUpload = ({ onDataImport }: FileUploadProps) => {
         throw new Error('No valid data found in the CSV file');
       }
 
-      setSuccess(`Successfully imported ${data.length} time entries`);
+      setSuccess(`Successfully imported ${data.length} time entries with ${roundingInterval}-minute rounding`);
       setTimeout(() => {
         onDataImport(data);
       }, 1000);
@@ -81,7 +99,7 @@ const FileUpload = ({ onDataImport }: FileUploadProps) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [onDataImport]);
+  }, [onDataImport, defaultHourlyRate, roundingInterval]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -106,6 +124,45 @@ const FileUpload = ({ onDataImport }: FileUploadProps) => {
         <CardTitle className="text-center">Import Timesheet Data</CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Configuration Options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <Label htmlFor="hourlyRate">Default Hourly Rate ($)</Label>
+            <Input
+              id="hourlyRate"
+              type="number"
+              value={defaultHourlyRate}
+              onChange={(e) => setDefaultHourlyRate(Number(e.target.value))}
+              min="0"
+              step="0.01"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Used when amount column is empty
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="rounding">Time Rounding</Label>
+            <Select 
+              value={roundingInterval.toString()} 
+              onValueChange={(value) => setRoundingInterval(Number(value) as 15 | 30 | 60)}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Round up time entries to nearest interval
+            </p>
+          </div>
+        </div>
+
         <div
           className={`relative p-8 rounded-lg border-2 border-dashed transition-all duration-300 text-center ${
             isDragging 
@@ -159,7 +216,10 @@ const FileUpload = ({ onDataImport }: FileUploadProps) => {
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
           <h4 className="font-medium mb-2">Expected CSV Format:</h4>
           <p className="text-sm text-muted-foreground">
-            Project, Client, Description, Time (h), Time (decimal), Amount (USD)
+            Project, Client, Description, Time (h), Time (decimal), Amount (USD) [optional]
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            * Amount column is optional - will be calculated using hourly rate if empty
           </p>
         </div>
       </CardContent>
