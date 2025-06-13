@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { TimeEntry } from '@/types/timeEntry';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface InvoiceGeneratorProps {
   timeEntries: TimeEntry[];
@@ -55,7 +57,51 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
   }, [clientEntries, hourlyRate]);
 
   const generateInvoicePDF = () => {
-    // In a real app, you'd use a PDF library like jsPDF or react-pdf
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(24);
+    doc.text('INVOICE', 105, 30, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`Invoice #: ${invoiceNumber}`, 20, 50);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 60);
+    doc.text(`Client: ${selectedClient}`, 20, 70);
+    
+    // Table data
+    const tableData = invoiceData.projectSummaries.map(project => [
+      project.project,
+      project.totalHours.toFixed(2),
+      `$${hourlyRate}`,
+      `$${project.totalAmount.toFixed(2)}`
+    ]);
+    
+    // Add table
+    (doc as any).autoTable({
+      head: [['Project', 'Hours', 'Rate', 'Amount']],
+      body: tableData,
+      startY: 90,
+      styles: {
+        fontSize: 10,
+        cellPadding: 5,
+      },
+      headStyles: {
+        fillColor: [66, 66, 66],
+        textColor: 255,
+      },
+    });
+    
+    // Total
+    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    doc.setFontSize(14);
+    doc.text(`Total Hours: ${invoiceData.totalHours.toFixed(2)}`, 120, finalY);
+    doc.setFontSize(16);
+    doc.text(`Total Amount: $${invoiceData.totalAmount.toFixed(2)}`, 120, finalY + 15);
+    
+    doc.save(`invoice-${invoiceNumber}-${selectedClient}.pdf`);
+  };
+
+  const generateInvoiceText = () => {
     const invoiceContent = `
 INVOICE
 
@@ -142,10 +188,16 @@ Total Amount: $${invoiceData.totalAmount.toFixed(2)}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Invoice Preview</CardTitle>
-            <Button onClick={generateInvoicePDF} className="flex items-center">
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={generateInvoicePDF} className="flex items-center">
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button onClick={generateInvoiceText} variant="outline" className="flex items-center">
+                <Download className="w-4 h-4 mr-2" />
+                Download Text
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">

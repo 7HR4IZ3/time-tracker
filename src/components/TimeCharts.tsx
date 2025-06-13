@@ -26,20 +26,6 @@ const TimeCharts = ({ timeEntries }: TimeChartsProps) => {
         .reduce((sum, e) => sum + e.amount, 0)
     }));
 
-    // Client distribution
-    const clientData = timeEntries.reduce((acc, entry) => {
-      acc[entry.client] = (acc[entry.client] || 0) + entry.timeDecimal;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const clientChartData = Object.entries(clientData).map(([client, hours]) => ({
-      name: client,
-      hours: parseFloat(hours.toFixed(2)),
-      amount: timeEntries
-        .filter(e => e.client === client)
-        .reduce((sum, e) => sum + e.amount, 0)
-    }));
-
     // Daily hours (simulated - you can enhance this with actual dates)
     const dailyData = [
       { day: 'Mon', hours: Math.random() * 8 + 2 },
@@ -51,7 +37,6 @@ const TimeCharts = ({ timeEntries }: TimeChartsProps) => {
 
     return {
       projectChartData,
-      clientChartData,
       dailyData
     };
   }, [timeEntries]);
@@ -102,44 +87,26 @@ const TimeCharts = ({ timeEntries }: TimeChartsProps) => {
           </CardContent>
         </Card>
 
-        {/* Client Hours Bar Chart */}
+        {/* Weekly Pattern */}
         <Card>
           <CardHeader>
-            <CardTitle>Hours by Client</CardTitle>
+            <CardTitle>Weekly Work Pattern</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData.clientChartData}>
+              <BarChart data={chartData.dailyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="day" />
                 <YAxis />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="hours" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                <Tooltip />
+                <Bar dataKey="hours" fill="#82ca9d" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Weekly Pattern */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Weekly Work Pattern</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData.dailyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="hours" fill="#82ca9d" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Project vs Client Matrix */}
+      {/* Project Performance */}
       <Card>
         <CardHeader>
           <CardTitle>Project Performance</CardTitle>

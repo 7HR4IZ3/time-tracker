@@ -1,12 +1,12 @@
-
 import { useState, useMemo } from 'react';
-import { Upload, Filter, FileText, BarChart3, Table, Settings } from 'lucide-react';
+import { Upload, Filter, FileText, BarChart3, Table, Settings, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import DataFilters from './DataFilters';
 import TimeCharts from './TimeCharts';
 import DataTable from './DataTable';
@@ -26,6 +26,7 @@ const Dashboard = ({ timeEntries, onNewData }: DashboardProps) => {
   const [hourlyRate, setHourlyRate] = useState<number>(75);
   const [roundingInterval, setRoundingInterval] = useState<15 | 30 | 60>(15);
   const [showSettings, setShowSettings] = useState(false);
+  const { toast } = useToast();
 
   const roundTime = (timeDecimal: number, interval: 15 | 30 | 60): number => {
     const intervalInHours = interval / 60;
@@ -40,6 +41,10 @@ const Dashboard = ({ timeEntries, onNewData }: DashboardProps) => {
     }));
     
     setCurrentEntries(updatedEntries);
+    toast({
+      title: "Time Rounding Applied",
+      description: `Time entries rounded to ${roundingInterval} minute intervals`,
+    });
   };
 
   const recalculateAmounts = () => {
@@ -49,6 +54,34 @@ const Dashboard = ({ timeEntries, onNewData }: DashboardProps) => {
     }));
     
     setCurrentEntries(updatedEntries);
+    toast({
+      title: "Amounts Recalculated",
+      description: `All amounts updated with $${hourlyRate}/hour rate`,
+    });
+  };
+
+  const shareAnalysis = () => {
+    const shareData = {
+      entries: currentEntries,
+      filters,
+      hourlyRate,
+      timestamp: new Date().toISOString()
+    };
+    
+    const encodedData = btoa(JSON.stringify(shareData));
+    const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Share Link Copied",
+        description: "Analysis link copied to clipboard",
+      });
+    }).catch(() => {
+      toast({
+        title: "Share Link Generated",
+        description: shareUrl,
+      });
+    });
   };
 
   const filteredEntries = useMemo(() => {
@@ -110,6 +143,10 @@ const Dashboard = ({ timeEntries, onNewData }: DashboardProps) => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={shareAnalysis} variant="outline">
+              <Share className="w-4 h-4 mr-2" />
+              Share Analysis
+            </Button>
             <Button onClick={() => setShowSettings(!showSettings)} variant="outline">
               <Settings className="w-4 h-4 mr-2" />
               Settings
