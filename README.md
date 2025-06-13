@@ -178,5 +178,5 @@ MIT License - see [LICENSE](LICENSE) for details
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/yourusername">Your Name</a>
+  Made with ❤️ by <a href="https://github.com/7HR4IZ3">THRAIZE</a>
 </p>
