@@ -30,12 +30,14 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { TimeEntry } from "@/types/timeEntry";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from 'jspdf-autotable'
 import { addDays, format } from "date-fns";
 
 interface InvoiceGeneratorProps {
   timeEntries: TimeEntry[];
 }
+
+applyPlugin(jsPDF);
 
 const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
   const [selectedClient, setSelectedClient] = useState<string>("");
@@ -164,7 +166,8 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
       yPos += 10;
 
       // Project entries table
-      (doc as any).autoTable({
+      // @ts-ignore
+      doc.autoTable({
         head: [["Date", "Description", "Hours", "Rate", "Amount"]],
         body: project.entries.map((entry) => [
           new Date(entry.startDate).toLocaleDateString(),
@@ -179,9 +182,9 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
         headStyles: { fillColor: [80, 80, 80] },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 15;
+      // @ts-ignore
+      yPos = doc.lastAutoTable.finalY + 15;
     });
-
     // Total section
     doc.setFontSize(14);
     doc.setFont(undefined, "bold");
