@@ -32,6 +32,8 @@ import { TimeEntry } from "@/types/timeEntry";
 import jsPDF from "jspdf";
 import { applyPlugin } from 'jspdf-autotable'
 import { addDays, format } from "date-fns";
+import { ShareButton } from "./ShareButton";
+import { SnapshotService } from "@/services/snapshotService";
 
 interface InvoiceGeneratorProps {
   timeEntries: TimeEntry[];
@@ -204,6 +206,28 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
     doc.text(footerText, 105, 280, { align: "center" });
 
     doc.save(`invoice-${invoiceNumber}-${selectedClient}.pdf`);
+  };
+
+  const getCurrentInvoiceSnapshot = () => {
+    return SnapshotService.createSnapshot(
+      timeEntries,
+      {
+        defaultHourlyRate: hourlyRate,
+        defaultRoundingInterval: 60, // Default for invoices
+        currentFilters: {}, // No filters for invoice view
+      },
+      {
+        title: `Invoice ${invoiceNumber} - ${selectedClient}`,
+        description: `Invoice snapshot for ${selectedClient} with ${invoiceData.totalHours.toFixed(2)} hours`,
+        activeView: 'invoice',
+        invoiceState: {
+          selectedClient,
+          hourlyRate,
+          invoiceNumber,
+          companyDetails,
+        },
+      }
+    );
   };
 
   const generateInvoiceText = () => {
@@ -410,6 +434,10 @@ Total Amount: $${invoiceData.totalAmount.toFixed(2)}
                 <Download className="w-4 h-4 mr-2" />
                 Text
               </Button>
+              <ShareButton 
+                snapshot={getCurrentInvoiceSnapshot()} 
+                variant="outline" 
+              />
             </div>
           </CardHeader>
           <CardContent>

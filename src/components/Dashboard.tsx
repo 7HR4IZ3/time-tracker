@@ -34,10 +34,12 @@ import DataTable from "./DataTable";
 import InvoiceGenerator from "./InvoiceGenerator";
 import ExportData from "./ExportData";
 import TimeRounding from "./TimeRounding";
-import ShareModal from "./ShareModal";
+
 import { TimeEntry, FilterOptions } from "@/types/timeEntry";
 import { cn } from "@/lib/utils";
 import { createFilterUrl } from "@/utils/urlParams";
+import { ShareButton } from "./ShareButton";
+import { SnapshotService } from "@/services/snapshotService";
 
 interface DashboardProps {
   timeEntries: TimeEntry[];
@@ -62,8 +64,7 @@ const Dashboard = ({
     defaultRoundingInterval
   );
   const [showSettings, setShowSettings] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareUrl, setShareUrl] = useState("");
+
   const { toast } = useToast();
 
   const timeStringToDecimal = (timeString: string): number => {
@@ -120,31 +121,23 @@ const Dashboard = ({
     });
   };
 
-  const shareAnalysis = () => {
-    const params = new URLSearchParams();
-
-    // Add current filters
-    const filterParams = new URLSearchParams(createFilterUrl(filters));
-    filterParams.forEach((value, key) => params.append(key, value));
-
-    // Add rate and interval
-    params.set("rate", hourlyRate.toString());
-    params.set("interval", roundingInterval.toString());
-
-    // Create the full URL
-    const url = new URL(window.location.href);
-    url.search = params.toString();
-
-    setShareUrl(url.toString());
-    setIsShareModalOpen(true);
+  const getCurrentSnapshot = () => {
+    return SnapshotService.createSnapshot(
+      filteredEntries,
+      {
+        defaultHourlyRate: hourlyRate,
+        defaultRoundingInterval: roundingInterval,
+        currentFilters: filters,
+      },
+      {
+        title: `TimeTracker Snapshot - ${new Date().toLocaleDateString()}`,
+        description: `Snapshot with ${filteredEntries.length} entries, filtered data, and current settings.`,
+        activeView: 'dashboard',
+      }
+    );
   };
 
-  const handleShareCopy = () => {
-    toast({
-      title: "Link Copied",
-      description: "Share link has been copied to your clipboard",
-    });
-  };
+
 
   const isWithinDateRange = (
     entry: TimeEntry,
@@ -262,10 +255,11 @@ const Dashboard = ({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={shareAnalysis} variant="outline" size="sm">
-                <Share className="w-4 h-4 mr-2" />
-                Share
-              </Button>
+              <ShareButton 
+                snapshot={getCurrentSnapshot()} 
+                variant="outline" 
+                size="sm" 
+              />
               <Button
                 onClick={() => setShowSettings(!showSettings)}
                 variant="outline"
@@ -400,14 +394,11 @@ const Dashboard = ({
                       Quick Actions
                     </Label>
                     <div className="grid gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={shareAnalysis}
+                      <ShareButton 
+                        snapshot={getCurrentSnapshot()} 
+                        variant="outline" 
                         className="justify-start"
-                      >
-                        <Share className="w-4 h-4 mr-2" />
-                        Share Analysis
-                      </Button>
+                      />
                       <Button
                         variant="outline"
                         onClick={onNewData}
@@ -478,13 +469,7 @@ const Dashboard = ({
         </Tabs>
       </div>
 
-      {/* Add ShareModal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        url={shareUrl}
-        onCopy={handleShareCopy}
-      />
+
     </div>
   );
 };

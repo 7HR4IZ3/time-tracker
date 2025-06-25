@@ -4,6 +4,8 @@ import FileUpload from "@/components/FileUpload";
 import Dashboard from "@/components/Dashboard";
 import { FilterOptions, TimeEntry } from "@/types/timeEntry";
 import { parseFilterParams } from "@/utils/urlParams";
+import { SnapshotService } from "@/services/snapshotService";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -12,19 +14,56 @@ const Index = () => {
   const [defaultRate, setDefaultRate] = useState<number>(25);
   const [defaultInterval, setDefaultInterval] = useState<15 | 30 | 60>(60);
   const [initialFilters, setInitialFilters] = useState<FilterOptions>({});
+  const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const url = params.get("url");
     const rate = params.get("rate");
     const interval = params.get("interval");
+    const snapshotId = params.get("snapshot");
     const filters = parseFilterParams(params);
 
+    // Handle snapshot loading first
+    if (snapshotId) {
+      loadSnapshot(snapshotId);
+      return;
+    }
+
+    // Otherwise handle normal URL parameters
     if (url) setInitialUrl(url);
     if (rate) setDefaultRate(Number(rate));
     if (interval) setDefaultInterval(Number(interval) as 15 | 30 | 60);
     setInitialFilters(filters);
   }, []);
+
+  const loadSnapshot = async (snapshotId: string) => {
+    setIsLoadingSnapshot(true);
+    try {
+      const snapshot = await SnapshotService.loadSnapshot(snapshotId);
+      
+      // Load all snapshot data
+      setTimeEntries(snapshot.timeEntries);
+      setDefaultRate(snapshot.defaultHourlyRate);
+      setDefaultInterval(snapshot.defaultRoundingInterval);
+      setInitialFilters(snapshot.currentFilters || {});
+      setHasData(true);
+
+      toast({
+        title: "Snapshot loaded!",
+        description: snapshot.title || "Timesheet snapshot loaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error loading snapshot",
+        description: "Failed to load the shared snapshot. Please check the link and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingSnapshot(false);
+    }
+  };
 
   const handleDataImport = (data: TimeEntry[]) => {
     setTimeEntries(data);
@@ -34,7 +73,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-secondary/20">
-      {!hasData ? (
+      {isLoadingSnapshot ? (
+        <div className="flex items-center justify-center min-h-screen p-6">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading snapshot...</p>
+          </div>
+        </div>
+      ) : !hasData ? (
         <div className="flex items-center justify-center min-h-screen p-6">
           <div className="max-w-2xl w-full">
             <div className="text-center mb-8">

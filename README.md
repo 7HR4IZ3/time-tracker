@@ -38,9 +38,10 @@
 ### 💫 Special Features
 
 - ⏰ Time rounding (15/30/60 min)
-- 📎 Shareable analysis links
+- 🔗 Shareable snapshot links (with Appwrite)
 - 📄 Invoice generation
 - 💾 Data export options
+- 📸 Complete app state snapshots
 
 ## 🚀 Quick Start
 
@@ -61,9 +62,32 @@ cd work-clock-canvas
 # Install dependencies
 npm install
 
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your Appwrite credentials
+
 # Start development server
 npm run dev
 ```
+
+### 🔧 Appwrite Setup
+
+#### Option 1: Automatic Setup (Recommended)
+1. Create an account at [Appwrite Cloud](https://cloud.appwrite.io)
+2. Create a new project
+3. Copy your Project ID and add it to `.env`
+4. Run the setup script:
+   ```bash
+   npm run setup:appwrite
+   ```
+
+#### Option 2: Manual Setup
+1. Create an account at [Appwrite Cloud](https://cloud.appwrite.io)
+2. Create a new project
+3. Copy your Project ID and add it to `.env`
+4. The app will automatically create the required database and collection on first use
+
+> **💡 Tip**: The automatic setup script ensures optimal database configuration and performance indexes.
 
 ## 🎮 Usage
 
@@ -78,6 +102,7 @@ your-app.com/?url=https://example.com/data.csv  # Load CSV
               &search=ProjectName                # Search
               &projects=Project1,Project2        # Filter
               &startDate=2024-01-01             # Date range
+              &snapshot=abc123                   # Load saved snapshot
 ```
 
 ### 📝 CSV Format
