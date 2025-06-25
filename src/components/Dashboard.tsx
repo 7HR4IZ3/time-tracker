@@ -145,11 +145,27 @@ const Dashboard = ({
   ) => {
     if (!range.start || !range.end) return true;
 
-    const startDate = new Date(range.start.setHours(0, 0, 0, 0));
-    const endDate = new Date(range.end.setHours(23, 59, 59, 999));
-    const entryDate = new Date(entry.startDate.setHours(0, 0, 0, 0));
+    try {
+      // Create new Date objects to avoid mutating the original dates
+      // Handle both Date objects and date strings
+      const startDate = new Date(range.start);
+      if (isNaN(startDate.getTime())) return true; // Invalid start date, include entry
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(range.end);
+      if (isNaN(endDate.getTime())) return true; // Invalid end date, include entry
+      endDate.setHours(23, 59, 59, 999);
+      
+      const entryDate = new Date(entry.startDate);
+      if (isNaN(entryDate.getTime())) return true; // Invalid entry date, include entry
+      entryDate.setHours(0, 0, 0, 0);
 
-    return entryDate >= startDate && entryDate <= endDate;
+      return entryDate >= startDate && entryDate <= endDate;
+    } catch (error) {
+      // If any date parsing fails, include the entry to avoid filtering out data
+      console.warn('Date parsing error in isWithinDateRange:', error);
+      return true;
+    }
   };
 
   const filteredEntries = useMemo(() => {

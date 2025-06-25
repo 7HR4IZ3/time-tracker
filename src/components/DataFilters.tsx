@@ -36,6 +36,16 @@ const DataFilters = ({
     ...new Set(timeEntries.map((entry) => entry.client)),
   ].sort();
 
+  // Helper function to safely format dates
+  const formatDateSafely = (dateValue: any): string => {
+    try {
+      const date = new Date(dateValue);
+      return isNaN(date.getTime()) ? 'Invalid Date' : date.toISOString().split("T")[0];
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     onFiltersChange({ ...filters, searchTerm: value || undefined });
@@ -230,13 +240,27 @@ const DataFilters = ({
                 {filters.dateRange?.start && (
                   <Badge variant="secondary" className="cursor-pointer">
                     Start Date:{" "}
-                    {filters.dateRange.start.toISOString().split("T")[0]}
+                    {(() => {
+                      try {
+                        const date = new Date(filters.dateRange.start);
+                        return isNaN(date.getTime()) ? 'Invalid Date' : date.toISOString().split("T")[0];
+                      } catch {
+                        return 'Invalid Date';
+                      }
+                    })()}
                   </Badge>
                 )}
                 {filters.dateRange?.end && (
                   <Badge variant="secondary" className="cursor-pointer">
                     End Date:{" "}
-                    {filters.dateRange.end.toISOString().split("T")[0]}
+                    {(() => {
+                      try {
+                        const date = new Date(filters.dateRange.end);
+                        return isNaN(date.getTime()) ? 'Invalid Date' : date.toISOString().split("T")[0];
+                      } catch {
+                        return 'Invalid Date';
+                      }
+                    })()}
                   </Badge>
                 )}
               </div>
