@@ -239,28 +239,12 @@ const DataFilters = ({
                 ))}
                 {filters.dateRange?.start && (
                   <Badge variant="secondary" className="cursor-pointer">
-                    Start Date:{" "}
-                    {(() => {
-                      try {
-                        const date = new Date(filters.dateRange.start);
-                        return isNaN(date.getTime()) ? 'Invalid Date' : date.toISOString().split("T")[0];
-                      } catch {
-                        return 'Invalid Date';
-                      }
-                    })()}
+                    Start Date: {formatDateSafely(filters.dateRange.start)}
                   </Badge>
                 )}
                 {filters.dateRange?.end && (
                   <Badge variant="secondary" className="cursor-pointer">
-                    End Date:{" "}
-                    {(() => {
-                      try {
-                        const date = new Date(filters.dateRange.end);
-                        return isNaN(date.getTime()) ? 'Invalid Date' : date.toISOString().split("T")[0];
-                      } catch {
-                        return 'Invalid Date';
-                      }
-                    })()}
+                    End Date: {formatDateSafely(filters.dateRange.end)}
                   </Badge>
                 )}
               </div>
