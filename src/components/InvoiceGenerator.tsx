@@ -30,7 +30,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { TimeEntry } from "@/types/timeEntry";
 import jsPDF from "jspdf";
-import { applyPlugin } from 'jspdf-autotable'
+import { applyPlugin } from "jspdf-autotable";
 import { addDays, format } from "date-fns";
 import { ShareButton } from "./ShareButton";
 import { SnapshotService } from "@/services/snapshotService";
@@ -50,6 +50,19 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
     address: "",
     email: "",
     phone: "",
+  });
+  const [payToDetails, setPayToDetails] = useState({
+    name: "",
+    address: "",
+    email: "",
+    phone: "",
+    bankName: "Lead Bank",
+    bankAddress: "9450 Southwest Gemini Drive, Beaverton, OR, 97008, USA",
+    accountName: "",
+    accountNumber: "214996969449",
+    swiftCode: "",
+    routingNumber: "101019644",
+    accountType: "Personal Checking"
   });
   const [invoiceDate, setInvoiceDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -115,95 +128,141 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
 
   const generateInvoicePDF = () => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    let yPos = 20;
 
-    // Header with branding
-    doc.setFillColor(52, 52, 52);
-    doc.rect(0, 0, 210, 60, "F");
-
-    // Company info (white text on dark background)
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.text(companyDetails.name || "Invoice", 20, 30);
-
-    doc.setFontSize(10);
-    if (companyDetails.address) {
-      doc.text(companyDetails.address, 20, 40);
-    }
-    if (companyDetails.email || companyDetails.phone) {
-      doc.text(`${companyDetails.email} | ${companyDetails.phone}`, 20, 50);
-    }
-
-    // Reset text color for rest of document
+    // Simple invoice title and details
     doc.setTextColor(0, 0, 0);
+    doc.setFontSize(20);
+    doc.setFont(undefined, "bold");
+    doc.text("INVOICE", 20, yPos);
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    doc.text(`Invoice #: ${invoiceNumber}`, pageWidth - 20, yPos, { align: "right" });
+    doc.text(`Date: ${new Date(invoiceDate).toLocaleDateString()}`, pageWidth - 20, yPos + 7, { align: "right" });
+    doc.text(`Due: ${new Date(dueDate).toLocaleDateString()}`, pageWidth - 20, yPos + 14, { align: "right" });
 
-    // Invoice details
-    doc.setFontSize(12);
-    doc.text(
-      [
-        `Invoice #: ${invoiceNumber}`,
-        `Date: ${new Date(invoiceDate).toLocaleDateString()}`,
-        `Due Date: ${new Date(dueDate).toLocaleDateString()}`,
-      ],
-      20,
-      80
-    );
+    yPos += 30;
 
-    // Client info
+    // Total section at the top
     doc.setFontSize(14);
-    doc.text("Bill To:", 20, 110);
+    doc.setFont(undefined, "bold");
+    doc.text(`Total Hours: ${invoiceData.totalHours.toFixed(2)}`, pageWidth - 20, yPos, { align: "right" });
+    doc.text(`Total Amount: $${invoiceData.totalAmount.toFixed(2)}`, pageWidth - 20, yPos + 10, { align: "right" });
+
+    yPos += 30;
+
+    // Pay To and Bill To sections (side by side)
+    const leftColumnX = 20;
+    const rightColumnX = pageWidth / 2 + 10;
+
+    // Pay To section
     doc.setFontSize(12);
-    doc.text(selectedClient, 20, 120);
+    doc.setFont(undefined, "bold");
+    doc.text("Pay To:", leftColumnX, yPos);
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    let payToYPos = yPos + 10;
+
+    // Contact info
+    const payToContactLines = [
+      payToDetails.name,
+      payToDetails.address,
+      payToDetails.email,
+      payToDetails.phone,
+    ].filter(Boolean);
+
+    payToContactLines.forEach((line) => {
+      if (line) {
+        doc.text(line, leftColumnX, payToYPos);
+        payToYPos += 5;
+      }
+    });
+
+    // Banking info
+    const bankingLines = [
+      payToDetails.bankName && `Bank: ${payToDetails.bankName}`,
+      payToDetails.bankAddress && `Bank Address: ${payToDetails.bankAddress}`,
+      payToDetails.accountName && `Account Name: ${payToDetails.accountName}`,
+      payToDetails.accountNumber && `Account #: ${payToDetails.accountNumber}`,
+      payToDetails.swiftCode && `SWIFT: ${payToDetails.swiftCode}`,
+      payToDetails.routingNumber && `Routing: ${payToDetails.routingNumber}`,
+    ].filter(Boolean);
+
+    if (bankingLines.length > 0) {
+      payToYPos += 5;
+      bankingLines.forEach((line) => {
+        if (line) {
+          doc.text(line, leftColumnX, payToYPos);
+          payToYPos += 5;
+        }
+      });
+    }
+
+    // Bill To section
+    doc.setFontSize(12);
+    doc.setFont(undefined, "bold");
+    doc.text("Bill To:", rightColumnX, yPos);
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    doc.text(selectedClient, rightColumnX, yPos + 10);
+
+    // Company info at bottom of sections
+    if (companyDetails.name || companyDetails.address || companyDetails.email || companyDetails.phone) {
+      const companyYPos = Math.max(payToYPos, yPos + 30) + 10;
+      doc.setFontSize(8);
+      doc.setFont(undefined, "normal");
+      doc.text("From:", leftColumnX, companyYPos);
+      if (companyDetails.name) doc.text(companyDetails.name, leftColumnX, companyYPos + 5);
+      if (companyDetails.address) doc.text(companyDetails.address, leftColumnX, companyYPos + 10);
+      if (companyDetails.email || companyDetails.phone) {
+        doc.text(`${companyDetails.email} ${companyDetails.phone}`, leftColumnX, companyYPos + 15);
+      }
+      yPos = companyYPos + 25;
+    } else {
+      yPos = Math.max(payToYPos, yPos + 40) + 10;
+    }
 
     // Project summaries
-    let yPos = 140;
     invoiceData.projectSummaries.forEach((project) => {
-      if (yPos > 250) {
+      if (yPos > pageHeight - 60) {
         doc.addPage();
         yPos = 20;
       }
 
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setFont(undefined, "bold");
       doc.text(project.project, 20, yPos);
       yPos += 10;
 
-      // Project entries table
       // @ts-ignore
       doc.autoTable({
         head: [["Date", "Description", "Hours", "Rate", "Amount"]],
         body: project.entries.map((entry) => [
           new Date(entry.startDate).toLocaleDateString(),
-          entry.description.substring(0, 30),
+          entry.description.substring(0, 40),
           entry.timeDecimal.toFixed(2),
           `$${hourlyRate}`,
           `$${(entry.timeDecimal * hourlyRate).toFixed(2)}`,
         ]),
         startY: yPos,
-        margin: { left: 20 },
+        margin: { left: 20, right: 20 },
         styles: { fontSize: 9 },
-        headStyles: { fillColor: [80, 80, 80] },
+        headStyles: { fillColor: [220, 220, 220] },
       });
 
       // @ts-ignore
       yPos = doc.lastAutoTable.finalY + 15;
     });
-    // Total section
-    doc.setFontSize(14);
-    doc.setFont(undefined, "bold");
-    doc.text(
-      [
-        `Total Hours: ${invoiceData.totalHours.toFixed(2)}`,
-        `Total Amount: $${invoiceData.totalAmount.toFixed(2)}`,
-      ],
-      120,
-      yPos + 10
-    );
 
-    // Footer
-    const footerText = "Thank you for your business!";
-    doc.setFontSize(10);
+    // Simple footer
+    doc.setFontSize(8);
     doc.setFont(undefined, "normal");
-    doc.text(footerText, 105, 280, { align: "center" });
+    doc.text("Thank you for your business!", pageWidth / 2, pageHeight - 20, { align: "center" });
 
     doc.save(`invoice-${invoiceNumber}-${selectedClient}.pdf`);
   };
@@ -218,13 +277,16 @@ const InvoiceGenerator = ({ timeEntries }: InvoiceGeneratorProps) => {
       },
       {
         title: `Invoice ${invoiceNumber} - ${selectedClient}`,
-        description: `Invoice snapshot for ${selectedClient} with ${invoiceData.totalHours.toFixed(2)} hours`,
-        activeView: 'invoice',
+        description: `Invoice snapshot for ${selectedClient} with ${invoiceData.totalHours.toFixed(
+          2
+        )} hours`,
+        activeView: "invoice",
         invoiceState: {
           selectedClient,
           hourlyRate,
           invoiceNumber,
           companyDetails,
+          payToDetails,
         },
       }
     );
@@ -344,6 +406,173 @@ Total Amount: $${invoiceData.totalAmount.toFixed(2)}
               </div>
             </div>
 
+            {/* Pay To Details */}
+            <div>
+              <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Payment Recipient
+              </h3>
+              <div className="space-y-6">
+                {/* Personal/Business Details */}
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-3">Contact Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input
+                        value={payToDetails.name}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="Payment Recipient Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Address</Label>
+                      <Input
+                        value={payToDetails.address}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            address: e.target.value,
+                          }))
+                        }
+                        placeholder="123 Payment St, City, State"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        value={payToDetails.email}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
+                        placeholder="payment@company.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input
+                        value={payToDetails.phone}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Banking Details */}
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-3">Banking Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Bank Name</Label>
+                      <Input
+                        value={payToDetails.bankName}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            bankName: e.target.value,
+                          }))
+                        }
+                        placeholder="Bank of America"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Bank Address</Label>
+                      <Input
+                        value={payToDetails.bankAddress}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            bankAddress: e.target.value,
+                          }))
+                        }
+                        placeholder="123 Bank St, City, State"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Account Name</Label>
+                      <Input
+                        value={payToDetails.accountName}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            accountName: e.target.value,
+                          }))
+                        }
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Account Number</Label>
+                      <Input
+                        value={payToDetails.accountNumber}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            accountNumber: e.target.value,
+                          }))
+                        }
+                        placeholder="1234567890"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Account Type</Label>
+                      <Input
+                        value={payToDetails.accountType}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            accountType: e.target.value,
+                          }))
+                        }
+                        placeholder="Personal Checking"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>SWIFT Code</Label>
+                      <Input
+                        value={payToDetails.swiftCode}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            swiftCode: e.target.value,
+                          }))
+                        }
+                        placeholder="BOFAUS3N"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Routing Number</Label>
+                      <Input
+                        value={payToDetails.routingNumber}
+                        onChange={(e) =>
+                          setPayToDetails((prev) => ({
+                            ...prev,
+                            routingNumber: e.target.value,
+                          }))
+                        }
+                        placeholder="021000322"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Invoice Details */}
             <div>
               <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
@@ -434,9 +663,9 @@ Total Amount: $${invoiceData.totalAmount.toFixed(2)}
                 <Download className="w-4 h-4 mr-2" />
                 Text
               </Button>
-              <ShareButton 
-                snapshot={getCurrentInvoiceSnapshot()} 
-                variant="outline" 
+              <ShareButton
+                snapshot={getCurrentInvoiceSnapshot()}
+                variant="outline"
               />
             </div>
           </CardHeader>
@@ -456,10 +685,28 @@ Total Amount: $${invoiceData.totalAmount.toFixed(2)}
 
               <Separator />
 
-              {/* Client Info */}
-              <div>
-                <h3 className="font-semibold text-lg">Bill To:</h3>
-                <p className="text-lg">{selectedClient}</p>
+              {/* Pay To and Bill To sections */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h3 className="font-semibold text-lg">Pay To:</h3>
+                  <div className="text-sm space-y-1 mt-2">
+                    {payToDetails.name && <p>{payToDetails.name}</p>}
+                    {payToDetails.address && <p>{payToDetails.address}</p>}
+                    {payToDetails.email && <p>{payToDetails.email}</p>}
+                    {payToDetails.phone && <p>{payToDetails.phone}</p>}
+                    {payToDetails.bankName && <p className="mt-3 font-medium">Banking Details:</p>}
+                    {payToDetails.bankName && <p>Bank: {payToDetails.bankName}</p>}
+                    {payToDetails.bankAddress && <p>Bank Address: {payToDetails.bankAddress}</p>}
+                    {payToDetails.accountName && <p>Account Name: {payToDetails.accountName}</p>}
+                    {payToDetails.accountNumber && <p>Account #: {payToDetails.accountNumber}</p>}
+                    {payToDetails.swiftCode && <p>SWIFT: {payToDetails.swiftCode}</p>}
+                    {payToDetails.routingNumber && <p>Routing #: {payToDetails.routingNumber}</p>}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Bill To:</h3>
+                  <p className="text-lg mt-2">{selectedClient}</p>
+                </div>
               </div>
 
               <Separator />
